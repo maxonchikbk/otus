@@ -1,5 +1,5 @@
 # С чего начинается Linux
-[Vagrantfile](https://github.com/maxonchikbk/otus/blob/main/packer/Vagrantfile)
+[Vagrantfile](https://github.com/maxonchikbk/otus/blob/main/1.kernel/packer/Vagrantfile)
 
 [Образ на Vagrant Cloud](https://app.vagrantup.com/maxonchik/boxes/centos-7-5)
 
