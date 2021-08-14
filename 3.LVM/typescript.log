@@ -1,7 +1,14 @@
 [root@lvm vagrant]# bash lvm1.sh
+###pvcreate /dev/sdb
   Physical volume "/dev/sdb" successfully created.
+
+###vgcreate vg_root /dev/sdb
   Volume group "vg_root" successfully created
+
+###lvcreate -n lv_root -l +100%FREE /dev/vg_root
   Logical volume "lv_root" created.
+
+###mkfs.xfs /dev/vg_root/lv_root
 meta-data=/dev/vg_root/lv_root   isize=512    agcount=4, agsize=655104 blks
          =                       sectsz=512   attr=2, projid32bit=1
          =                       crc=1        finobt=0, sparse=0
@@ -11,6 +18,9 @@ naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
 log      =internal log           bsize=4096   blocks=2560, version=2
          =                       sectsz=512   sunit=0 blks, lazy-count=1
 realtime =none                   extsz=4096   blocks=0, rtextents=0
+###mount /dev/vg_root/lv_root /mnt
+
+###xfsdump -J - /dev/VolGroup00/LogVol00 | xfsrestore -J - /mnt
 xfsrestore: using file dump (drive_simple) strategy
 xfsrestore: version 3.1.7 (dump format 3.0)
 xfsdump: using file dump (drive_simple) strategy
@@ -53,6 +63,13 @@ xfsdump: dump complete: 26 seconds elapsed
 xfsdump: Dump Status: SUCCESS
 xfsrestore: restore complete: 27 seconds elapsed
 xfsrestore: Restore Status: SUCCESS
+
+###for i in /proc/ /sys/ /dev/ /run/ /boot/; do mount --bind $i /mnt/$i; done
+###chroot /mnt /bin/bash <<EOF
+###grub2-mkconfig -o /boot/grub2/grub.cfg
+###cd /boot; dracut -v initramfs-3.10.0-862.2.3.el7.x86_64.img 3.10.0-862.2.3.el7.x86_64 --force;
+###sed -i 's/d.lvm.lv=VolGroup00\/LogVol00/d.lvm.lv=vg_root\/lv_root/g' /boot/grub2/grub.cfg  
+###EOF
 Generating grub configuration file ...
 Found linux image: /boot/vmlinuz-3.10.0-862.2.3.el7.x86_64
 Found initrd image: /boot/initramfs-3.10.0-862.2.3.el7.x86_64.img
@@ -113,13 +130,18 @@ Skipping udev rule: 91-permissions.rules
 *** Creating image file ***
 *** Creating image file done ***
 *** Creating initramfs image file '/boot/initramfs-3.10.0-862.2.3.el7.x86_64.img' done ***
+###reboot
 
 [root@lvm vagrant]# bash lvm2.sh
-Do you really want to remove active logical volume VolGroup00/LogVol00? [y/n]: y
+###lvremove -f /dev/VolGroup00/LogVol00
   Logical volume "LogVol00" successfully removed
+
+###lvcreate -n VolGroup00/LogVol00 -L 8G /dev/VolGroup00
 WARNING: xfs signature detected on /dev/VolGroup00/LogVol00 at offset 0. Wipe it? [y/n]: y
   Wiping xfs signature on /dev/VolGroup00/LogVol00.
   Logical volume "LogVol00" created.
+
+###mkfs.xfs /dev/VolGroup00/LogVol00
 meta-data=/dev/VolGroup00/LogVol00 isize=512    agcount=4, agsize=524288 blks
          =                       sectsz=512   attr=2, projid32bit=1
          =                       crc=1        finobt=0, sparse=0
@@ -129,6 +151,9 @@ naming   =version 2              bsize=4096   ascii-ci=0 ftype=1
 log      =internal log           bsize=4096   blocks=2560, version=2
          =                       sectsz=512   sunit=0 blks, lazy-count=1
 realtime =none                   extsz=4096   blocks=0, rtextents=0
+###mount /dev/VolGroup00/LogVol00 /mnt
+
+###xfsdump -J - /dev/vg_root/lv_root | xfsrestore -J - /mnt
 xfsrestore: using file dump (drive_simple) strategy
 xfsrestore: version 3.1.7 (dump format 3.0)
 xfsdump: using file dump (drive_simple) strategy
@@ -171,6 +196,12 @@ xfsdump: dump complete: 24 seconds elapsed
 xfsdump: Dump Status: SUCCESS
 xfsrestore: restore complete: 24 seconds elapsed
 xfsrestore: Restore Status: SUCCESS
+
+###for i in /proc/ /sys/ /dev/ /run/ /boot/; do mount --bind $i /mnt/$i; done
+
+###chroot /mnt/ /bin/bash -e <<EOF
+###grub2-mkconfig -o /boot/grub2/grub.cfg
+###cd /boot; dracut -v initramfs-3.10.0-862.2.3.el7.x86_64.img 3.10.0-862.2.3.el7.x86_64 --force;
 Generating grub configuration file ...
 Found linux image: /boot/vmlinuz-3.10.0-862.2.3.el7.x86_64
 Found initrd image: /boot/initramfs-3.10.0-862.2.3.el7.x86_64.img
@@ -231,11 +262,19 @@ Skipping udev rule: 91-permissions.rules
 *** Creating image file ***
 *** Creating image file done ***
 *** Creating initramfs image file '/boot/initramfs-3.10.0-862.2.3.el7.x86_64.img' done ***
+
+###pvcreate /dev/sdc /dev/sdd
   Physical volume "/dev/sdc" successfully created.
+
+###vgcreate vg_var /dev/sdc /dev/sdd
   Physical volume "/dev/sdd" successfully created.
+  
+###lvcreate -L 950M -m1 -n lv_var vg_var
   Volume group "vg_var" successfully created
   Rounding up size to full physical extent 952.00 MiB
   Logical volume "lv_var" created.
+
+###mkfs.ext4 /dev/vg_var/lv_var
 mke2fs 1.42.9 (28-Dec-2013)
 Filesystem label=
 OS type: Linux
@@ -257,12 +296,25 @@ Writing inode tables: done
 Creating journal (4096 blocks): done
 Writing superblocks and filesystem accounting information: done
 
+###mount /dev/vg_var/lv_var /mnt
+###cp -aR /var/* /mnt/      
+###umount /mnt
+###mount /dev/vg_var/lv_var /var
+###echo "`blkid | grep var: | awk '{print $2}'` /var ext4 defaults 0 0" >> /etc/fstab
+###EOF
+###reboot
+
 [root@lvm vagrant]# bash lvm3.sh
-Do you really want to remove active logical volume vg_root/lv_root? [y/n]: y
+###lvremove -f /dev/vg_root/lv_root
   Logical volume "lv_root" successfully removed
+###vgremove -f /dev/vg_root
   Volume group "vg_root" successfully removed
+###pvremove -f /dev/sdb
   Labels on physical volume "/dev/sdb" successfully wiped.
+###lvcreate -n LogVol_Home -L 2G /dev/VolGroup00
   Logical volume "LogVol_Home" created.
+
+###mkfs.xfs /dev/VolGroup00/LogVol_Home
 meta-data=/dev/VolGroup00/LogVol_Home isize=512    agcount=4, agsize=131072 blks
          =                       sectsz=512   attr=2, projid32bit=1
          =                       crc=1        finobt=0, sparse=0
@@ -273,11 +325,30 @@ log      =internal log           bsize=4096   blocks=2560, version=2
          =                       sectsz=512   sunit=0 blks, lazy-count=1
 realtime =none                   extsz=4096   blocks=0, rtextents=0
   Rounding up size to full physical extent 128.00 MiB
+
+###mount /dev/VolGroup00/LogVol_Home /mnt/
+###cp -aR /home/* /mnt/   
+###rm -rf /home/*
+###umount /mnt
+###mount /dev/VolGroup00/LogVol_Home /home/
+###echo "`blkid | grep Home | awk '{print $2}'` /home xfs defaults 0 0" >> /etc/fstab
+###touch /home/file{1..20}  
+
+###lvcreate -L 100MB -s -n home_snap /dev/VolGroup00/LogVol_Home
   Logical volume "home_snap" created.
-ls /home/file*
-file1  file10  file2  file3  file4  file5  file6  file7  file8  file9  vagrant
+
+###rm -f /home/file{11..20}
+###echo "ls /home/file*"
+###ls /home/file*
+file1  file10  file2  file3  file4  file5  file6  file7  file8  file9 
+
+###umount /home
+###lvconvert --merge /dev/VolGroup00/home_snap
   Merging of volume VolGroup00/home_snap started.
   VolGroup00/LogVol_Home: Merged: 100.00%
-ls /home/file*
-file1   file11  file13  file15  file17  file19  file20  file4  file6  file8  vagrant
+###mount /home
+
+###echo "ls /home/file*"
+###ls /home/file*
+file1   file11  file13  file15  file17  file19  file20  file4  file6  file8 
 file10  file12  file14  file16  file18  file2   file3   file5  file7  file9
