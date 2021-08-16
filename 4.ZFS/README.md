@@ -86,7 +86,11 @@ otus/hometask2  checksum     sha256     inherited from otus
 
 # 3. Найти сообщение от преподавателей
 - zfs receive otus/hometask3 < otus_task2.file \
-find /otus/hometask3/ se*
+find /otus/hometask3/ -name se* 
 ```
-find: ‘se*’: No such file or directory
+/otus/hometask3/task1/file_mess/secret_message
+```
+cat /otus/hometask3/task1/file_mess/secret_message
+```
+https://github.com/sindresorhus/awesome
 ```
