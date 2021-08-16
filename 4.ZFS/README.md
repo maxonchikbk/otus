@@ -90,7 +90,7 @@ find /otus/hometask3/ -name se*
 ```
 /otus/hometask3/task1/file_mess/secret_message
 ```
-cat /otus/hometask3/task1/file_mess/secret_message
+- cat /otus/hometask3/task1/file_mess/secret_message
 ```
 https://github.com/sindresorhus/awesome
 ```
