@@ -18,9 +18,10 @@
 echo "vagrant        ALL=(ALL)       NOPASSWD: ALL" > /etc/sudoers.d/vagrant
 ```
 
-#Домашнее задание
+# Домашнее задание
 
 Обновить ядро в базовой системе
+
 Цель:
 
 Студент получит навыки работы с Git, Vagrant, Packer и публикацией готовых образов в Vagrant Cloud.
