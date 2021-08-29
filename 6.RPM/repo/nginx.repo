@@ -1,0 +1,5 @@
+[nginx]
+name=nginx repo
+baseurl=http://repo.local
+gpgcheck=0
+enabled=1

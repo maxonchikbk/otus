@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Docker Whale maxonchik</title>
+  <style>
+    body {
+      background-color: #BDEDFF;
+      padding: 0px;
+      margin: 0px;
+    }
+    #whale {
+      position: absolute;
+      z-index: -1;
+      top: auto;
+      left: 25%;
+      margin: auto;
+      width: auto;
+      animation: zoom 4s infinite;
+    }
+    
+    @keyframes zoom {
+      from {transform: scale(100%, 100%); animation-timing-function: cubic-bezier(0.1, 0.3, 0.3, 1);}
+      50% {transform: scale(200%, 200%); animation-timing-function: cubic-bezier(0.1, 0.3, 0.3, 1);}
+      to {transform: scale(100%, 100%)}
+    }
+  </style>
+</head>
+<body>
+  <a href="./info.php"></a><img id="whale" src="404.png"/>
+  <?php phpinfo(INFO_MODULES); ?>
+</body>
+</html>
