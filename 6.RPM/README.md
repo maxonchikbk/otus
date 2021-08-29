@@ -1,9 +1,9 @@
 #  Управление пакетами. Дистрибьюция софта 
-[Vagrantfile](https://github.com/maxonchikbk/otus/blob/main/6.RPM/Vagrantfile)
+- [Vagrantfile](https://github.com/maxonchikbk/otus/blob/main/6.RPM/Vagrantfile)
 Сбора nginx в котором заменена стартовая страница, страница 404 и внедрён php-fpm
-[Dockerfile](https://github.com/maxonchikbk/otus/blob/main/6.RPM/Dockerfile)
+- [Dockerfile](https://github.com/maxonchikbk/otus/blob/main/6.RPM/Dockerfile)
 Репозиторий с кастомным nginx 
-[rpm](https://github.com/maxonchikbk/otus/blob/main/6.RPM/repo/nginx-1.20.1-1.el8.ngx.x86_64.rpm)
+- [rpm](https://github.com/maxonchikbk/otus/blob/main/6.RPM/repo/nginx-1.20.1-1.el8.ngx.x86_64.rpm)
 ---
 # Домашнее задание
 
