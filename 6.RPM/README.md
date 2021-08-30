@@ -1,4 +1,4 @@
-#  Управление пакетами. Дистрибьюция софта 
+#  Управление пакетами. Дистрибьюция софта.
 - [Vagrantfile](https://github.com/maxonchikbk/otus/blob/main/6.RPM/Vagrantfile)
 Сборка nginx в котором заменена стартовая страница, страница 404 и внедрён php-fpm
 - [Dockerfile](https://github.com/maxonchikbk/otus/blob/main/6.RPM/Dockerfile)
