@@ -1,7 +1,7 @@
 #  Bash
 [Vagrantfile](https://github.com/maxonchikbk/otus/blob/main/8.Bash/Vagrantfile)
 --
-* Устанавливаем yum install –y sendmail 
+* Устанавливаем yum install –y mailx 
 * Кладём скрипт отправки уведомлений [script.sh](https://github.com/maxonchikbk/otus/blob/main/8.Bash/script.sh) в /etc/cron.hourly/
 
 ---
