@@ -13,7 +13,7 @@
  EOF_sudoers_vagrant
  
  ```
- заменён на 
+заменён на 
 ```
 echo "vagrant        ALL=(ALL)       NOPASSWD: ALL" > /etc/sudoers.d/vagrant
 ```
