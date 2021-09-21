@@ -4,8 +4,7 @@
 * Устанавливаем yum install –y sendmail 
 * Кладём скрипт отправки уведомлений [script.sh](https://github.com/maxonchikbk/otus/blob/main/8.Bash/script.sh) в /etc/cron.hourly/
 
-Скрипт обработки лог-файла: [log.sh](https://github.com/maxonchikbk/otus/blob/main/8.Bash/log.sh)
---
+---
 # Домашнее задание
 
 Написать скрипт для крона, который раз в час присылает на заданную почту:
