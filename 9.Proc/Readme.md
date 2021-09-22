@@ -1,29 +1,7 @@
 # Управление процессами 
 
 * [psax.sh](https://github.com/maxonchikbk/otus/blob/main/9.Proc/psax.sh)
-* [nice.sh](https://github.com/maxonchikbk/otus/blob/main/9.Proc/nice.sh)
-* [p.sh](https://github.com/maxonchikbk/otus/blob/main/9.Proc/p.sh)
 
-```
-[vagrant@localhost vagrant]$ top -u vagrant
-top - 17:27:01 up 6 min,  1 user,  load average: 7.26, 4.41, 1.97
-Tasks:  91 total,  11 running,  80 sleeping,   0 stopped,   0 zombie
-%Cpu(s): 22.0 us, 16.5 sy, 16.5 ni,  0.0 id,  0.0 wa, 41.8 hi,  3.3 si,  0.0 st
-MiB Mem :    465.2 total,     68.8 free,    112.8 used,    283.5 buff/cache
-MiB Swap:   2048.0 total,   2044.7 free,      3.3 used.    337.1 avail Mem
-
-    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
-  21819 vagrant   20   0   12724   3168   2920 R  16.0   0.7   0:05.03 p.sh
-  21821 vagrant   20   0   12724   3144   2900 R  15.7   0.7   0:04.75 p.sh
-  21820 vagrant   20   0   12724   3204   2960 R  15.3   0.7   0:04.91 p.sh
-  21816 vagrant   21   1   12724   3120   2872 R  12.7   0.7   0:06.99 p.sh
-  21817 vagrant   21   1   12724   3140   2896 R  12.3   0.7   0:04.75 p.sh
-  21818 vagrant   21   1   12724   3168   2916 R  12.3   0.7   0:04.42 p.sh
-  21822 vagrant   35  15   12724   3048   2800 R   0.7   0.6   0:01.04 p.sh
-  21823 vagrant   35  15   12724   3064   2816 R   0.7   0.6   0:00.98 p.sh
-  21824 vagrant   35  15   12724   3072   2820 R   0.7   0.6   0:00.93 p.sh
-  21825 vagrant   35  15   12724   3136   2892 R   0.3   0.7   0:00.90 p.sh        
-  ```
 ---
 # Домашнее задание
 
