@@ -1,0 +1,8 @@
+FROM alpine:latest
+
+RUN apk update && apk upgrade && apk add php-fpm 
+RUN sed -e 's/127.0.0.1:9000/9000/' -i /etc/php7/php-fpm.d/www.conf
+
+EXPOSE 9000
+
+ENTRYPOINT /usr/sbin/php-fpm7 --nodaemonize
