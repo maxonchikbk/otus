@@ -1,0 +1,11 @@
+[Unit]
+Description=MyUnit
+Wants=myunit.timer
+After=syslog.target
+
+[Service]
+EnvironmentFile=/etc/sysconfig/myunit.ini
+ExecStart=/bin/bash /vagrant/script.sh
+
+[Install]
+WantedBy=multi-user.target

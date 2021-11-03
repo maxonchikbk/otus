@@ -1,0 +1,56 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+$hostsfile_update = <<-'SCRIPT'
+echo -e '192.168.56.110 log.example.com log\n192.168.56.111 web.example.com web\n192.168.56.112 elk.example.com elk' >> /etc/hosts
+sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config && systemctl restart sshd
+SCRIPT
+$ansible = <<-'SCRIPT'
+yum install -y epel-release
+yum install -y ansible 
+SCRIPT
+$sshd_config = <<-'SCRIPT'
+echo vagrant | su - vagrant <<- EOF
+ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -P ""
+sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no vagrant@web.example.com && sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no node2.example.com
+EOF
+SCRIPT
+Vagrant.configure("2") do |config|
+
+  config.vm.define "web" do |web|
+    web.vm.box = "centos/8"
+    web.vm.hostname = "web.example.com"
+    web.vm.network "private_network", ip: "192.168.56.111"
+    web.vm.provision "shell", inline: $hostsfile_update    
+    config.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--audio", "none"]
+    end
+  end
+  
+  config.vm.define "elk" do |elk|
+    elk.vm.box = "centos/8"
+    elk.vm.hostname = "elk.example.com"
+    elk.vm.network "private_network", ip: "192.168.56.111"
+    elk.vm.provision "shell", inline: $hostsfile_update    
+    config.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--audio", "none"]
+    end
+  end
+  
+  config.vm.define "log", primary: true do |log|
+    log.vm.box = "centos/8"
+    log.vm.hostname = "log.example.com"
+    log.vm.network "forwarded_port", guest: 80, host: 8080
+    log.vm.network "private_network", ip: "192.168.56.110"
+    log.vm.provision "shell", inline: $ansible
+    log.vm.provision "shell", inline: $hostsfile_update    
+    log.vm.provision "shell", inline: $sshd_config
+    log.vm.provider "virtualbox" do |v|
+    config.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--audio", "none"]
+    end
+ 	v.memory = 4096
+	v.cpus = 2
+    end
+  end
+
+end

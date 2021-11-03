@@ -1,0 +1,10 @@
+[Unit]
+Description=MyUnit timer
+Requires=myunit.service
+
+[Timer]
+Unit=myunit.service
+OnUnitActiveSec=30
+
+[Install]
+WantedBy=timers.target

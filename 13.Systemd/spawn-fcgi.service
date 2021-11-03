@@ -1,0 +1,11 @@
+[Unit]
+Description=Spawn FastCGI scripts to be used by web servers
+After=local_fs.target network.target syslog.target remote_fs.target named.target 
+
+[Service]
+Type=forking
+EnvironmentFile=/etc/sysconfig/spawn-fcgi
+ExecStart=/usr/bin/spawn-fcgi
+
+[Install]
+WantedBy=multi-user.target

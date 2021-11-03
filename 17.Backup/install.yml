@@ -1,0 +1,27 @@
+- hosts: all
+  vars:
+    nginx_port: 8080
+  tasks:
+  - name: install
+    yum:
+      name:
+      - epel-release
+      - nginx
+      state: latest
+    notify:
+      - start nginx
+  - name: configure nginx
+    template:
+      src: templates/nginx.conf.j2
+      dest: /etc/nginx/nginx.conf
+      owner: root
+      group: root
+      mode: 0644
+    notify:
+      - start nginx
+  handlers:
+  - name: start nginx
+    service:
+      name: nginx
+      state: started
+      enabled: yes
