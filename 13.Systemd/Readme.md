@@ -1,6 +1,6 @@
 #  Инициализация системы. Systemd.
 
-* [systemd.sh](https://github.com/maxonchikbk/otus/blob/main/13.Systemd/script.sh) - скрипт настройки
+* [systemd.sh](https://github.com/maxonchikbk/otus/blob/main/13.Systemd/systemd.sh) - скрипт настройки
 * [script.sh](https://github.com/maxonchikbk/otus/blob/main/13.Systemd/script.sh) - скрипт мониторинга
 * [myunit.service](https://github.com/maxonchikbk/otus/blob/main/13.Systemd/myunit.service)
 * [myunit.timer](https://github.com/maxonchikbk/otus/blob/main/13.Systemd/myunit.timer)
