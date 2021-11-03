@@ -9,9 +9,7 @@ yum install -y epel-release
 yum install -y ansible
 SCRIPT
 $sshd_config = <<-'SCRIPT'
-whoami
 echo vagrant | su - vagrant <<- EOF
-whoami
 ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -P ""
 sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no vagrant@node1.example.com && sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no node2.example.com
 EOF
