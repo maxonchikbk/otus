@@ -4,8 +4,8 @@ After=local_fs.target network.target syslog.target remote_fs.target named.target
 
 [Service]
 Type=forking
-EnvironmentFile=/etc/sysconfig/spawn-fcgi
-ExecStart=/usr/bin/spawn-fcgi
+EnvironmentFile=/etc/sysconfig/spawn-fcgi.ini
+ExecStart=/usr/bin/spawn-fcgi $OPTIONS
 
 [Install]
 WantedBy=multi-user.target
