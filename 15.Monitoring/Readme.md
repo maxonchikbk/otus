@@ -1,4 +1,4 @@
-# Управление процессами 
+# Мониторинг
 
 * [Monitoring](https://github.com/maxonchikbk/geekbrains/tree/master/homework/Monitoring)
 
