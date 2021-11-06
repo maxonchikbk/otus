@@ -1,3 +1,10 @@
+* [Vagrantfile](https://github.com/maxonchikbk/otus/blob/main/16.Logging/Vagrantfile)
+
+## journald
+На log запускаем __sudo journalctl -D /var/log/journal/remote --follow__ и смотрим логи с web
+![p+g](journald.png)
+## ELK
+![p+g](elastic.png)
 # Домашнее задание
 
 1. Настраиваем центральный сервер для сбора логов
