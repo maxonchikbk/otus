@@ -1,4 +1,4 @@
-# Управление процессами 
+# SELinus
 
 * [psax.sh](https://github.com/maxonchikbk/otus/blob/main/9.Proc/psax.sh)
 
