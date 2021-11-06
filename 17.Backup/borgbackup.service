@@ -1,0 +1,10 @@
+[Unit]
+Description=BorgBackup
+Wants=borgbackup.timer
+After=syslog.target
+
+[Service]
+ExecStart=/bin/sh /vagrant/backup.sh
+
+[Install]
+WantedBy=multi-user.target

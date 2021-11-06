@@ -1,51 +1,71 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 $hostsfile_update = <<-'SCRIPT'
-echo -e '192.168.56.110 backup_server.example.com backup_server\n192.168.56.111 client.example.com client' >> /etc/hosts
+echo -e '192.168.56.110 server.local server\n192.168.56.111 client.local client' >> /etc/hosts
 sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config && systemctl restart sshd
 SCRIPT
-$ansible = <<-'SCRIPT'
-yum install -y epel-release
-yum install -y ansible 
-SCRIPT
-$borg = <<-'SCRIPT'
-yum install -y epel-release
-yum install -y borgbackup
-SCRIPT
 $sshd_config = <<-'SCRIPT'
-echo vagrant | su - vagrant <<- EOF
+yum install -y epel-release
+yum install -y sshpass
+# echo vagrant | su - vagrant <<- EOF
 ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -P ""
-sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no vagrant@client.example.com && sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no node2.example.com
-EOF
+sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no vagrant@server.local
+# EOF
 SCRIPT
+$borgclient = <<-'SCRIPT'
+setenforce 0
+yum install -y epel-release
+yum config-manager --set-enabled powertools
+yum install -y borgbackup
+mv /vagrant/borgbackup.service /etc/systemd/system/
+mv /vagrant/borgbackup.timer /etc/systemd/system/
+systemctl start borgbackup.service
+SCRIPT
+$borgserver = <<-'SCRIPT'
+parted -s /dev/sdb mklabel gpt mkpart primary ext4 0% 100%
+mkfs.ext4 /dev/sdb1
+mkdir /var/backup
+mount /dev/sdb1 /var/backup
+yum install -y epel-release
+yum config-manager --set-enabled powertools
+yum install -y borgbackup
+export BORG_PASSPHRASE='password'
+BORG_PASSPHRASE='password' >> /etc/environment
+rm -f -R /var/backup/*
+borg init -e repokey /var/backup
+chown vagrant:vagrant -R /var/backup
+SCRIPT
+
 Vagrant.configure("2") do |config|
+  
+  config.vm.define "server", primary: true do |server|
+    server.vm.box = "centos/8"
+    server.vm.hostname = "server.local"
+    server.vm.network "forwarded_port", guest: 80, host: 8080
+    server.vm.network "private_network", ip: "192.168.56.110"
+    server.vm.provision "shell", inline: $hostsfile_update
+    server.vm.provision "shell", inline: $borgserver 
+    server.vm.provider "virtualbox" do |v|      
+      v.customize ["modifyvm", :id, "--audio", "none"]
+      unless File.exist?('.vagrant/sata1.vdi')
+        v.customize ['createhd', '--filename', '.vagrant/sata1.vdi','--size', '2000']
+      end
+      v.customize ["storagectl", :id, "--name", "SATA", "--add", "sata" ]
+      v.customize ['storageattach', :id, '--storagectl', 'SATA', '--port', 1, '--device', 0, '--type', 'hdd', '--medium', '.vagrant/sata1.vdi']
+      v.memory = 4096
+      v.cpus = 2      
+    end  
+  end
 
   config.vm.define "client" do |client|
     client.vm.box = "centos/8"
-    client.vm.hostname = "client.example.com"
+    client.vm.hostname = "client.local"
     client.vm.network "private_network", ip: "192.168.56.111"
     client.vm.provision "shell", inline: $hostsfile_update    
-    client.vm.provision "shell", inline: $borg
+    client.vm.provision "shell", inline: $sshd_config
+    client.vm.provision "shell", inline: $borgclient
     config.vm.provider "virtualbox" do |vb|
       vb.customize ["modifyvm", :id, "--audio", "none"]
-    end
-  end
-  
-  config.vm.define "backup_server", primary: true do |backup_server|
-    backup_server.vm.box = "centos/8"
-    backup_server.vm.hostname = "backup_server.example.com"
-    backup_server.vm.network "forwarded_port", guest: 80, host: 8080
-    backup_server.vm.network "private_network", ip: "192.168.56.110"
-    backup_server.vm.provision "shell", inline: $ansible
-    backup_server.vm.provision "shell", inline: $hostsfile_update    
-    backup_server.vm.provision "shell", inline: $sshd_config
-    backup_server.vm.provision "shell", inline: $borg
-    backup_server.vm.provider "virtualbox" do |v|
-    config.vm.provider "virtualbox" do |vb|
-      vb.customize ["modifyvm", :id, "--audio", "none"]
-    end
- 	v.memory = 4096
-	v.cpus = 2
     end
   end
 
