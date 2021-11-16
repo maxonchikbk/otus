@@ -1,6 +1,6 @@
 #  DHCP, PXE 
 * [Vagrantfile](https://github.com/maxonchikbk/otus/blob/main/19.PXE/Vagrantfile)
-* [install.yml](https://github.com/maxonchikbk/otus/blob/main/19.PXE/install.yml)
+* [Ansible](https://github.com/maxonchikbk/otus/blob/main/19.PXE/install.yml)
 # Домашнее задание
 
 Настройка PXE сервера для автоматической установки
