@@ -1,0 +1,23 @@
+- hosts: log
+  tasks:
+  - name: installing packages
+    yum:
+      name:
+      - systemd-journal-gateway   
+      state: installed
+  - name: making dirs
+    file: 
+      path: /var/log/journal/remote
+      state: directory
+      owner: systemd-journal-remote
+      group: systemd-journal-remote
+  - name: Copy systemd-journal-remote.service
+    copy:
+      src: configs/systemd-journal-remote.service
+      dest: /lib/systemd/system/systemd-journal-remote.service    
+      force: yes  
+  - name: Start services
+    service:
+      name: systemd-journal-remote             
+      state: started
+      enabled: yes   

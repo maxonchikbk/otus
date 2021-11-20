@@ -1,0 +1,45 @@
+- hosts: web
+  tasks:
+  - name: Add repository
+    yum_repository:
+      name: elasticsearch.repo
+      description: EPEL YUM repo
+      gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+      gpgcheck: yes
+      baseurl: https://artifacts.elastic.co/packages/7.x/yum 
+  - name: installing packages
+    yum:
+      name:
+      - nginx
+      - systemd-journal-gateway
+      - filebeat            
+      state: installed
+  - name: Copy journal-upload.conf
+    copy:
+      src: configs/journal-upload.conf
+      dest: /etc/systemd/journal-upload.conf
+      force: yes  
+  - name: Copy filebeat.yml & filebeat.conf
+    copy:
+      src: configs/{{ item }}
+      dest: /etc/filebeat/
+      force: yes  
+    with_items:
+      - filebeat.yml
+      - filebeat.conf      
+  - name: Copy nginx.conf
+    copy:
+      src: configs/nginx.conf
+      dest: /etc/nginx/
+      force: yes        
+  - name: enable nginx module
+    command: filebeat modules enable nginx
+  - name: Start services
+    service:
+      name: "{{ item }}"               
+      state: started
+      enabled: yes
+    with_items:
+      - systemd-journal-upload
+      - nginx
+      - filebeat

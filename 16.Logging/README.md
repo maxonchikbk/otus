@@ -1,5 +1,8 @@
 #  Сбор и анализ логов 
 * [Vagrantfile](https://github.com/maxonchikbk/otus/blob/main/16.Logging/Vagrantfile)
+* [elk.yml](https://github.com/maxonchikbk/otus/blob/main/16.Logging/elk.yml)
+* [log.yml](https://github.com/maxonchikbk/otus/blob/main/16.Logging/log.yml)
+* [web.yml](https://github.com/maxonchikbk/otus/blob/main/16.Logging/web.yml)
 
 ## journald
 На log запускаем __sudo journalctl -D /var/log/journal/remote --follow__ и смотрим логи с web

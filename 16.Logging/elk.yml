@@ -1,0 +1,41 @@
+- hosts: elk
+  tasks:
+  - name: Add repository
+    yum_repository:
+      name: elasticsearch.repo
+      description: EPEL YUM repo
+      gpgkey: https://artifacts.elastic.co/GPG-KEY-elasticsearch
+      gpgcheck: yes
+      baseurl: https://artifacts.elastic.co/packages/7.x/yum 
+  - name: installing packages
+    yum:
+      name:
+      - java-1.8.0-openjdk
+      - elasticsearch
+      - kibana
+      - logstash      
+      state: installed
+  - name: Copy elasticsearch.yml
+    copy:
+      src: configs/elasticsearch.yml
+      dest: /etc/elasticsearch/    
+      force: yes  
+  - name: Copy kibana.yml
+    copy:
+      src: configs/kibana.yml
+      dest: /etc/kibana/kibana.yml   
+      force: yes  
+  - name: Copy filebeat-nginx.conf
+    copy:
+      src: configs/filebeat-nginx.conf
+      dest: /etc/logstash/conf.d/filebeat-nginx.conf
+      force: yes        
+  - name: Start services
+    service:
+      name: "{{ item }}"               
+      state: started
+      enabled: yes
+    with_items:
+      - elasticsearch 
+      - kibana
+      - logstash

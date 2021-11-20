@@ -1,84 +1,30 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 $hostsfile_update = <<-'SCRIPT'
-echo -e '192.168.56.110 log.example.com log\n192.168.56.111 web.example.com web\n192.168.56.112 elk.example.com elk' >> /etc/hosts
+echo -e '192.168.56.110 log\n192.168.56.111 web\n192.168.56.112 elk' >> /etc/hosts
 sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config && systemctl restart sshd
 SCRIPT
-$webconfig = <<-'SCRIPT'
+$ansible = <<-'SCRIPT'
 setenforce 0
-rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
-echo "[elasticstack]
-name=Elastic repository for 7.x packages
-baseurl=https://artifacts.elastic.co/packages/7.x/yum
-gpgcheck=1
-gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
-enabled=1
-autorefresh=1
-type=rpm-md" > /etc/yum.repos.d/elasticsearch.repo
-yum install -y nginx systemd-journal-gateway filebeat
-sed -i 's*# URL=*URL=http://log:19532*' /etc/systemd/journal-upload.conf
-sed -i 's/#host: "localhost:5601"/host: "elk:5601"/' /etc/filebeat/filebeat.yml
-sed -i 's/localhost:9200/elk:9200/' /etc/filebeat/filebeat.yml
-/bin/cp -rf /vagrant/filebeat.conf /etc/filebeat/
-/bin/cp -rf /vagrant/nginx.conf /etc/nginx/
-filebeat modules enable nginx && filebeat setup
-systemctl start systemd-journal-upload nginx filebeat
+yum install -y epel-release
+yum install -y ansible
+SCRIPT
+$sshd_config = <<-'SCRIPT'
+echo vagrant | su - vagrant <<- EOF
+ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -P ""
+sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no vagrant@log 
+sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no vagrant@web 
+sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no vagrant@elk
+EOF
 SCRIPT
 
-$journal = <<-'SCRIPT'
-setenforce 0
-yum install -y systemd-journal-gateway
-mkdir -p /var/log/journal/remote
-chown systemd-journal-remote:systemd-journal-remote /var/log/journal/remote
-sed -i 's/https=-3/http=-3/' /lib/systemd/system/systemd-journal-remote.service
-systemctl start systemd-journal-remote
-SCRIPT
-
-$elkconfig = <<-'SCRIPT'
-setenforce 0
-rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
-echo "[elasticstack]
-name=Elastic repository for 7.x packages
-baseurl=https://artifacts.elastic.co/packages/7.x/yum
-gpgcheck=1
-gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
-enabled=1
-autorefresh=1
-type=rpm-md" > /etc/yum.repos.d/elasticsearch.repo
-yum install -y java-1.8.0-openjdk elasticsearch kibana logstash
-echo "xpack.security.enabled: false
-discovery.seed_hosts: ["127.0.0.1", "[::1]"]
-http.host: 0.0.0.0
-http.port: 9200" >> /etc/elasticsearch/elasticsearch.yml
-echo "server.port: 5601
-server.host: "0.0.0.0"" >> /etc/kibana/kibana.yml 
-sed -i 's/#elasticsearch.hosts/elasticsearch.hosts/' /etc/kibana/kibana.yml 
-/bin/cp -rf /vagrant/filebeat-nginx.conf /etc/logstash/conf.d/
-systemctl start elasticsearch kibana logstash 
-SCRIPT
 Vagrant.configure("2") do |config|
-
-  config.vm.define "elk" do |elk|
-    elk.vm.box = "centos/8"
-    elk.vm.hostname = "elk.example.com"
-    elk.vm.network "private_network", ip: "192.168.56.112"
-    elk.vm.provision "shell", inline: $hostsfile_update
-    elk.vm.provision "shell", inline: $elkconfig
-    elk.vm.provider "virtualbox" do |v|
-    config.vm.provider "virtualbox" do |vb|
-      vb.customize ["modifyvm", :id, "--audio", "none"]      
-      end  
-      v.memory = 8192
-      v.cpus = 4
-    end
-  end
 
   config.vm.define "log", primary: true do |log|
     log.vm.box = "centos/8"
     log.vm.hostname = "log.example.com"
     log.vm.network "private_network", ip: "192.168.56.110"
-    log.vm.provision "shell", inline: $hostsfile_update
-    log.vm.provision "shell", inline: $journal
+    log.vm.provision "shell", inline: $hostsfile_update    
     log.vm.provider "virtualbox" do |vb|
       vb.customize ["modifyvm", :id, "--audio", "none"]
     end
@@ -88,10 +34,25 @@ Vagrant.configure("2") do |config|
     web.vm.box = "centos/8"
     web.vm.hostname = "web.example.com"
     web.vm.network "private_network", ip: "192.168.56.111"
-    web.vm.provision "shell", inline: $hostsfile_update
-    web.vm.provision "shell", inline: $webconfig
+    web.vm.provision "shell", inline: $hostsfile_update    
     config.vm.provider "virtualbox" do |vb|
       vb.customize ["modifyvm", :id, "--audio", "none"]
     end
   end
+  
+  config.vm.define "elk" do |elk|
+    elk.vm.box = "centos/8"
+    elk.vm.hostname = "elk.example.com"
+    elk.vm.network "private_network", ip: "192.168.56.112"
+    elk.vm.provision "shell", inline: $hostsfile_update
+    elk.vm.provision "shell", inline: $ansible
+    elk.vm.provision "shell", inline: $sshd_config
+    elk.vm.provider "virtualbox" do |v|
+    config.vm.provider "virtualbox" do |vb|
+      vb.customize ["modifyvm", :id, "--audio", "none"]      
+      end  
+      v.memory = 8192
+      v.cpus = 4
+    end
+  end  
 end
