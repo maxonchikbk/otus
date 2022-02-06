@@ -1,0 +1,209 @@
+развернем 2 ВМ mysql1, mysql2 с 8 версией и паролем Otus321$
+gcloud beta compute --project=calm-tendril-290110 instances create mysql1 --zone=us-central1-a --machine-type=e2-medium --subnet=default --network-tier=PREMIUM --maintenance-policy=MIGRATE --service-account=322426944095-compute@developer.gserviceaccount.com --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --image=ubuntu-2004-focal-v20200907  --image-project=ubuntu-os-cloud --boot-disk-size=10GB --boot-disk-type=pd-ssd --boot-disk-device-name=mysql1 --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any
+ 
+gcloud compute ssh mysql1
+
+sudo apt update && sudo apt upgrade -y && sudo apt-get install -y mysql-server
+
+sudo mysql_secure_installation
+
+-VM2
+gcloud beta compute --project=calm-tendril-290110 instances create mysql2 --zone=us-central1-a --machine-type=e2-medium --subnet=default --network-tier=PREMIUM --maintenance-policy=MIGRATE --service-account=322426944095-compute@developer.gserviceaccount.com --scopes=https://www.googleapis.com/auth/devstorage.read_only,https://www.googleapis.com/auth/logging.write,https://www.googleapis.com/auth/monitoring.write,https://www.googleapis.com/auth/servicecontrol,https://www.googleapis.com/auth/service.management.readonly,https://www.googleapis.com/auth/trace.append --image=ubuntu-2004-focal-v20200907 --image-project=ubuntu-os-cloud --boot-disk-size=10GB --boot-disk-type=pd-ssd --boot-disk-device-name=mysql2 --no-shielded-secure-boot --shielded-vtpm --shielded-integrity-monitoring --reservation-affinity=any
+ 
+gcloud compute ssh mysql2
+
+sudo apt update && sudo apt upgrade -y && sudo apt-get install -y mysql-server
+
+sudo mysql_secure_installation
+
+sudo systemctl status mysql
+sudo systemctl enable mysql
+
+sudo mysql
+-- почему нас пустило без пароля?
+SELECT * from mysql.user where User="root";
+SELECT * from mysql.user where User="root" \G
+-- видим трастовую аутентификацию по юникс сокету
+
+-- зададим пароль
+-- для совместимости с 5.7 mysql_native_password
+ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'Otus321$';
+-- в 8.0 используется caching_sha2_password
+https://dev.mysql.com/doc/refman/8.0/en/caching-sha2-pluggable-authentication.html
+
+ALTER USER 'root'@'localhost' IDENTIFIED WITH caching_sha2_password BY 'Otus321$';
+
+sudo mysql -u root -p
+
+-- чтобы не вводить пароль каждый раз
+sudo su
+cd $HOME
+nano .my.cnf
+[client]
+password="Otus321$"
+
+mysql
+
+-- репликация
+select @@server_id;
+
+
+Как это устроено в процессах:
+ps ax|grep mysqld
+ps -eLf|grep mysqld
+
+В файлах:
+ls -l /var/lib/mysql
+
+В конфигах:
+sudo nano /etc/mysql/mysql.conf.d/mysqld.cnf
+
+В логическом виде:
+> use mysql
+> show tables;
+
+-- проверим доступность
+telnet ip port
+netstat -an
+
+-- настройка репликации
+ON MASTER
+show variables like '%binlog%';
+# Instead of skip-networking the default is now to listen only on
+# localhost which is more compatible and is not less secure.
+bind-address            = 127.0.0.1
+
+sudo nano /etc/mysql/mysql.conf.d/mysqld.cnf
+bind-address            = 10.128.15.222
+sudo service mysql restart
+
+-- create user repl@10.128.15.209 IDENTIFIED BY 'oTUSlave#2020'; 
+create user repl@10.128.15.225 IDENTIFIED WITH caching_sha2_password BY 'oTUSlave#2020';
+-- https://dev.mysql.com/doc/refman/8.0/en/caching-sha2-pluggable-authentication.html
+GRANT REPLICATION SLAVE ON *.* TO repl@10.128.15.225;
+SELECT User, Host FROM mysql.user;
+SHOW MASTER STATUS;
+
+-- ON SLAVE
+
+SHOW MASTER STATUS;
+-- меняем server_id на слейве
+sudo nano /etc/mysql/mysql.conf.d/mysqld.cnf
+
+server_id = 2
+
+sudo service mysql restart
+
+-- добавить правило в брендмауере GCP
+-- без публичного ключа
+sudo mysql
+CHANGE MASTER TO MASTER_HOST='10.128.15.224', MASTER_USER='repl', MASTER_PASSWORD='oTUSlave#2020', MASTER_LOG_FILE='binlog.000004', MASTER_LOG_POS=900;
+START SLAVE;
+show slave status\G
+ --Last_IO_Error: error connecting to master 'repl@10.128.15.218:3306' - retry-time: 60 retries: 1 message
+
+-- необходимо получить публичный ключ
+STOP SLAVE;
+CHANGE MASTER TO MASTER_HOST='10.128.15.224', MASTER_USER='repl', MASTER_PASSWORD='oTUSlave#2020', MASTER_LOG_FILE='binlog.000004', MASTER_LOG_POS=900, GET_MASTER_PUBLIC_KEY = 1;
+START SLAVE;
+show slave status\G
+
+SHOW GLOBAL VARIABLES LIKE 'caching_sha2_password_public_key_path';
+SHOW STATUS LIKE 'Caching_sha2_password_rsa_public_key'\G
+
+-- https://dev.mysql.com/doc/refman/8.0/en/replica-logs-relaylog.html
+-- можем настроить наш relay.log
+show variables like '%relay%';
+
+-- посмотрим статусы репликации
+use performance_schema;
+show tables like '%replic%';
+
+show variables like '%log_bin%';
+show variables like '%binlog%';
+
+show variables like '%read%';
+-- рекомендуется включать для слейва, иначе на слейве тоже можем вносить изменения
+set global innodb_read_only = ON
+
+
+-- КОМАНДЫ ДЛЯ УПРАВЛЕНИЯ СОСТОЯНИЕМ
+STOP SLAVE;
+START SLAVE;
+
+-- варианты разрешения конфликтов
+1. удалить на слейве блокирующую запись
+2. STOP SLAVE;
+RESET SLAVE;
+SHOW SLAVE STATUS; -- на мастере
+-- новый номер позиции в бинлоге
+START SLAVE;
+3. stop slave; set global sql_slave_skip_counter=1; start slave;
+
+-- скрипт избавления от дубликатов при репликации
+while [ 1 ]; do      
+if [ `mysql -uroot -ptest -e"show slave status \G;" | grep "Duplicate entry" | wc -l` -eq 2 ] ; then          
+mysql -uroot -ptest -e"stop slave; set global sql_slave_skip_counter=1; start slave;";      
+fi;      
+mysql -uroot -ptest -e"show slave status\G";  
+done
+
+4. -- можно добавить в конфиг игнор ошибки при репликации
+ну для duplicate entry например ошибка номер 1062
+в конфиг добавляется
+slave-skip-errors = 1062
+
+
+-- бэкап
+-- логический
+На рабочем сервере:
+shell> mysqldump --all-databases > dump-data.sql
+
+копируем на новый сервер
+На новом сервере:
+shell> mysql < dump-data.sql
+
+-- или
+-- Use mysqldump to create a dump file as a snapshot of the server's data. Use --all-databases, --events, and --routines to back up all data, and --master-data=2 to include the current binary log coordinates in the dump file.
+mysqldump --host=host_name --all-databases --events --routines --master-data=2> dump_file
+-- Execute the mysqldump command periodically to create newer snapshots as desired.
+-- If data loss occurs (for example, if the server unexpectedly exits), use the most recent dump file to restore the data:
+mysql --host=host_name -u root -p < dump_file
+mysql --host=10.128.15.222 -u root -p < dump_file.sql
+
+-- физический
+
+mysqlbinlog --read-from-remote-server --host=10.128.15.222 --stop-never binlog.000001 
+
+-- on primary
+UPDATE mysql.user SET Host='%' WHERE Host='localhost' AND User='root';
+FLUSH PRIVILEGES;
+ALTER USER 'root'@'%' IDENTIFIED WITH caching_sha2_password BY 'Otus321$';
+FLUSH PRIVILEGES;
+SELECT * from mysql.user where User="root";
+
+mysqlbinlog -R -h 10.128.15.222 -p --raw --stop-never binlog.000001
+mysqlbinlog -R -h 10.128.15.222 -p --raw binlog.000001
+
+--Use mysqldump to create a dump file as a snapshot of the server's data. Use --all-databases, --events, and --routines to back up all data, and --master-data=2 to include the current binary log coordinates in the dump file.
+
+mysqldump -h 10.128.15.220 -p --all-databases --events --routines --master-data=2> dump_file
+
+--Execute the mysqldump command periodically to create newer snapshots as desired.
+
+--If data loss occurs (for example, if the server unexpectedly exits), use the most recent dump file to restore the data:
+
+mysql --host=host_name -u root -p < dump_file
+
+SHOW MASTER STATUS;
+
+--If the most recent backed-up log file is named binlog.001004, re-execute the log events like this:
+
+mysqlbinlog --start-position=3683 binlog.000004 | mysql
+
+-- You might find it easier to copy the backup files (dump file and binary log files) to the server host to make it easier to perform the restore operation, or if MySQL does not allow remote root access.
+
+
+
+sysbench --mysql-host=localhost --mysql-user=otus --mysql-password='OtusOtus2#' --db-driver=mysql --mysql-db=otus /usr/share/sysbench/oltp_read_write.lua run
+sysbench --mysql-host=localhost --mysql-user=otus --mysql-password='OtusOtus2#' --db-driver=mysql --mysql-db=otus /usr/share/sysbench/oltp_read_write.lua prepare

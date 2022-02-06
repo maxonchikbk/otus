@@ -1,0 +1,75 @@
+- hosts: pxeserver
+  vars:
+    centos_version: 8.5.2111
+  tasks:
+  - name: installing packages
+    yum:
+      name:
+      - epel-release
+      - nginx
+      - dhcp-server 
+      - tftp-server
+      - syslinux-tftpboot.noarch
+      state: latest
+  - name: configure dhcp-server
+    copy: 
+      src: configs/dhcpd.conf
+      dest: /etc/dhcp/dhcpd.conf
+  - name: configure pxelinux
+    copy: 
+      src: "{{ item }}"
+      dest: /var/lib/tftpboot/pxelinux/
+    with_items:
+      - configs/pxelinux.cfg
+      - /tftpboot/libutil.c32
+      - /tftpboot/menu.c32
+      - /tftpboot/libmenu.c32
+      - /tftpboot/ldlinux.c32
+      - /tftpboot/vesamenu.c32       
+      - /tftpboot/pxelinux.0     
+  - name: configure nginx
+    copy:
+      src: configs/nginx.conf
+      dest: /etc/nginx/nginx.conf
+      owner: nginx
+      group: nginx
+      mode: 0644
+  - name: configure autoinstall
+    copy:
+      src: configs/ks.cfg
+      dest: /mnt/ks.cfg
+  - name: making dirs
+    file: 
+      path: "{{ item }}"
+      state: directory
+    with_items:
+      - /mnt/centos8-install 
+      - /var/lib/tftpboot/pxelinux/images/CentOS-8
+  - name: Download initrd.img
+    get_url:
+      url: http://ftp.mgts.by/pub/CentOS/{{ centos_version }}/BaseOS/x86_64/os/images/pxeboot/initrd.img
+      dest: /var/lib/tftpboot/pxelinux/images/CentOS-8/initrd.img
+  - name: Download vmlinuz
+    get_url:
+      url: http://ftp.mgts.by/pub/CentOS/{{ centos_version }}/BaseOS/x86_64/os/images/pxeboot/vmlinuz
+      dest: /var/lib/tftpboot/pxelinux/images/CentOS-8/vmlinuz    
+  - name: Download CentOS-{{ centos_version }}-x86_64-dvd1.iso
+    get_url:
+      url: http://ftp.mgts.by/pub/CentOS/{{ centos_version }}/isos/x86_64/CentOS-{{ centos_version }}-x86_64-dvd1.iso
+      dest: /vagrant/
+  - name: mount CentOS-{{ centos_version }}-x86_64-dvd1.iso
+    ansible.posix.mount:
+      path: /mnt/centos8-install
+      src: /vagrant/CentOS-{{ centos_version }}-x86_64-dvd1.iso
+      fstype: iso9660
+      opts: loop
+      state: mounted    
+  - name: Start services
+    service:
+      name: "{{ item }}"               
+      state: started
+      enabled: yes
+    with_items:
+      - dhcpd 
+      - tftp.service
+      - nginx
