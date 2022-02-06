@@ -2,7 +2,7 @@
 Vagrantfile - для стенда урока 9 - Network
 * [Vagrantfile](https://github.com/maxonchikbk/otus/blob/main/19.Network/Vagrantfile)
 * [Ansible](https://github.com/maxonchikbk/otus/blob/main/19.Network/playbook.yml)
-(https://github.com/maxonchikbk/otus/blob/main/19.Network/Map.png)
+![map](https://github.com/maxonchikbk/otus/blob/main/19.Network/Map.png)
 # Дано
 Vagrantfile с начальным  построением сети: \
 inetRouter \
