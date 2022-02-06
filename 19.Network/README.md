@@ -1,6 +1,8 @@
 # otus-linux
 Vagrantfile - для стенда урока 9 - Network
-
+[Vagrantfile](https://github.com/maxonchikbk/otus/blob/main/19.Network/Vagrantfile)
+[Ansible](https://github.com/maxonchikbk/otus/blob/main/19.Network/playbook.yml)
+(/map.png)
 # Дано
 Vagrantfile с начальным  построением сети: \
 inetRouter \
@@ -79,3 +81,4 @@ test servers | 192.168.1.128/26 | 62 | 192.168.1.191
 office hardware | 192.168.1.192/26 | 62 | 192.168.1.255
 
 Свободные сети есть только в Central: 192.168.0.16/28, 192.168.0.48/28 и 192.168.0.128/25
+
