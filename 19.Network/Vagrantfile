@@ -1,0 +1,144 @@
+# -*- mode: ruby -*-
+# vim: set ft=ruby :
+
+$hostsfile_update = <<-'SCRIPT'
+echo -e '192.168.50.10 inetRouter\n
+192.168.50.11 centralRouter\n
+192.168.50.12 centralServer\n
+192.168.50.13 office1Router\n
+192.168.50.14 office1Server\n
+192.168.50.15 office2Router\n
+192.168.50.16 office2Server' >> /etc/hosts
+sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config && systemctl restart sshd
+SCRIPT
+
+$ansible = <<-'SCRIPT'
+yum install -y epel-release
+yum install -y ansible
+SCRIPT
+
+$sshd_config = <<-'SCRIPT'
+echo vagrant | su - vagrant <<- EOF
+ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -P ""
+sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no inetRouter
+sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no centralRouter
+sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no centralServer
+sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no office1Router
+sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no office1Server
+sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no office2Router
+sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no office2Server
+EOF
+SCRIPT
+
+MACHINES = {
+  :inetRouter => {
+        :box_name => "centos/stream8",
+        :net => [
+                   {ip: '192.168.255.1', adapter: 2, netmask: "255.255.255.252", virtualbox__intnet: "router-net"},
+                   {ip: '192.168.50.10', adapter: 8},
+                ]
+  },  
+  :centralServer => {
+        :box_name => "centos/stream8",
+        :net => [
+                   {ip: '192.168.0.2', adapter: 2, netmask: "255.255.255.240", virtualbox__intnet: "dir-net"},
+                   {ip: '192.168.50.12', adapter: 8},
+                ]
+  },
+  :office1Router => {
+        :box_name => "centos/stream8",
+        :net => [
+                   {ip: '192.168.255.6', adapter: 2, netmask: "255.255.255.252", virtualbox__intnet: "office1-central"},
+                   {ip: '192.168.2.1', adapter: 3, netmask: "255.255.255.192", virtualbox__intnet: "dev1-net"},
+                   {ip: '192.168.2.65', adapter: 4, netmask: "255.255.255.192", virtualbox__intnet: "test1-net"},
+                   {ip: '192.168.2.129', adapter: 5, netmask: "255.255.255.192", virtualbox__intnet: "managers-net"},
+                   {ip: '192.168.2.193', adapter: 6, netmask: "255.255.255.192", virtualbox__intnet: "office1-net"},
+                   {ip: '192.168.50.13', adapter: 8},
+                ]
+  },
+  :office1Server => {
+        :box_name => "centos/stream8",
+        :net => [
+                   {ip: '192.168.2.130', adapter: 2, netmask: "255.255.255.192", virtualbox__intnet: "managers-net"},
+                   {ip: '192.168.50.14', adapter: 8},
+                ]
+  },
+  :office2Router => {
+        :box_name => "centos/stream8",
+        :net => [
+                   {ip: '192.168.255.10', adapter: 2, netmask: "255.255.255.252", virtualbox__intnet: "office2-central"},
+                   {ip: '192.168.1.1', adapter: 3, netmask: "255.255.255.128", virtualbox__intnet: "dev2-net"},
+                   {ip: '192.168.1.129', adapter: 4, netmask: "255.255.255.192", virtualbox__intnet: "test2-net"},                   
+                   {ip: '192.168.2.193', adapter: 6, netmask: "255.255.255.192", virtualbox__intnet: "office2-net"},
+                   {ip: '192.168.50.15', adapter: 8},
+                ]
+  },
+  :office2Server => {
+        :box_name => "centos/stream8",
+        :net => [
+                   {ip: '192.168.1.2', adapter: 2, netmask: "255.255.255.128", virtualbox__intnet: "dev2-net"},
+                   {ip: '192.168.50.16', adapter: 8},
+                ]
+  },
+  :centralRouter => {
+        :box_name => "centos/stream8",
+        :net => [
+                   {ip: '192.168.255.2', adapter: 2, netmask: "255.255.255.252", virtualbox__intnet: "router-net"},
+                   {ip: '192.168.0.1', adapter: 3, netmask: "255.255.255.240", virtualbox__intnet: "dir-net"},
+                   {ip: '192.168.0.33', adapter: 4, netmask: "255.255.255.240", virtualbox__intnet: "hw-net"},
+                   {ip: '192.168.0.65', adapter: 5, netmask: "255.255.255.192", virtualbox__intnet: "mgt-net"},
+                   {ip: '192.168.255.9', adapter: 6, netmask: "255.255.255.252", virtualbox__intnet: "office1-central"},
+                   {ip: '192.168.255.5', adapter: 7, netmask: "255.255.255.252", virtualbox__intnet: "office2-central"},
+                   {ip: '192.168.50.11', adapter: 8},
+                ]
+  }  
+}
+
+Vagrant.configure("2") do |config|
+
+  MACHINES.each do |boxname, boxconfig|
+
+    config.vm.define boxname do |box|
+
+        box.vm.box = boxconfig[:box_name]
+        box.vm.host_name = boxname.to_s
+
+        boxconfig[:net].each do |ipconf|
+          box.vm.network "private_network", ipconf
+        end
+        
+        if boxconfig.key?(:public)
+          box.vm.network "public_network", boxconfig[:public]
+        end
+
+        box.vm.provision "shell", inline: <<-SHELL
+          mkdir -p ~root/.ssh
+                cp ~vagrant/.ssh/auth* ~root/.ssh
+        SHELL
+
+        box.vm.provision "shell", run: "always", inline: $hostsfile_update
+        
+        case boxname.to_s
+        when "inetRouter"
+          # box.vm.provision "shell", run: "always", inline: <<-SHELL
+          #   sysctl net.ipv4.conf.all.forwarding=1
+          #   iptables -t nat -A POSTROUTING ! -d 192.168.0.0/16 -o eth0 -j MASQUERADE
+          #   SHELL        
+        when "centralServer"
+          # box.vm.provision "shell", run: "always", inline: <<-SHELL
+          #   echo "DEFROUTE=no" >> /etc/sysconfig/network-scripts/ifcfg-eth0 
+          #   echo "GATEWAY=192.168.0.1" >> /etc/sysconfig/network-scripts/ifcfg-eth1
+          #   systemctl restart NetworkManager
+          #   SHELL
+        when "centralRouter"          
+          box.vm.provision "shell", run: "always", inline: $ansible
+          box.vm.provision "shell", run: "always", inline: $hostsfile_update
+          box.vm.provision "shell", run: "always", inline: $sshd_config
+        end
+
+      end
+
+  end  
+  
+end
+

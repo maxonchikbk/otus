@@ -1,0 +1,117 @@
+- hosts: all
+  tasks:
+    - name: deisable default route
+      lineinfile:
+        dest: /etc/sysconfig/network-scripts/ifcfg-eth0
+        line: DEFROUTE=no
+
+- hosts: routers
+  tasks:
+    - name: set up forward packages across routers
+      sysctl:
+        name: net.ipv4.conf.all.forwarding
+        value: '1'
+        state: present
+
+- hosts: inetRouter
+  tasks:
+    - name: add route for Central
+      lineinfile:
+        dest: /etc/sysconfig/network-scripts/route-eth1
+        line: 192.168.0.0/24 via 192.168.255.2 dev eth1
+    - name: add route for office2
+      lineinfile:
+        dest: /etc/sysconfig/network-scripts/route-eth1
+        line: 192.168.1.0/24 via 192.168.255.2 dev eth1
+    - name: add route for office1
+      lineinfile:
+        dest: /etc/sysconfig/network-scripts/route-eth1
+        line: 192.168.2.0/24 via 192.168.255.2 dev eth1
+    - name: add route for office2Router
+      lineinfile:
+        dest: /etc/sysconfig/network-scripts/route-eth1
+        line: 192.168.255.6/32 via 192.168.255.2 dev eth1
+    - name: add route for office1Router
+      lineinfile:
+        dest: /etc/sysconfig/network-scripts/route-eth1
+        line: 192.168.255.10/32 via 192.168.255.2 dev eth1
+    - name: IPtables Configuration
+      command: iptables -t nat -A POSTROUTING ! -d 192.168.0.0/16 -o eth0 -j MASQUERADE
+    - name: Restart network
+      systemd:
+        name: network
+        state: restarted
+
+- hosts: centralRouter
+  tasks:
+    - name: add default gateway for centralRouter
+      lineinfile:
+        dest: /etc/sysconfig/network-scripts/ifcfg-eth1
+        line: GATEWAY=192.168.255.1
+    - name: route add for office2
+      lineinfile:
+        dest: /etc/sysconfig/network-scripts/route-eth5
+        line: 192.168.2.0/24 via 192.168.255.6 dev eth5
+    - name: route add for office1
+      lineinfile:
+        dest: /etc/sysconfig/network-scripts/route-eth6
+        line: 192.168.2.0/24 via 192.168.255.10 dev eth6
+    - name: Restart network
+      systemd:
+        name: network
+        state: restarted        
+    
+- hosts: centralServer
+  tasks:
+    - name: add default gateway for centralServer
+      lineinfile:
+        dest: /etc/sysconfig/network-scripts/ifcfg-eth1
+        line: GATEWAY=192.168.0.1
+    - name: Restart network
+      systemd:
+        name: network
+        state: restarted            
+
+- hosts: office1Router 
+  tasks:
+    - name: add default gateway for office1Router
+      lineinfile:
+        dest: /etc/sysconfig/network-scripts/ifcfg-eth1
+        line: GATEWAY=192.168.255.5
+    - name: Restart network
+      systemd:
+        name: network
+        state: restarted                    
+
+- hosts: office2Router 
+  tasks:
+    - name: add default gateway for office1Router
+      lineinfile:
+        dest: /etc/sysconfig/network-scripts/ifcfg-eth1
+        line: GATEWAY=192.168.255.9
+    - name: Restart network
+      systemd:
+        name: network
+        state: restarted        
+
+- hosts: office1Server
+  tasks:
+    - name: add default gateway for office1Router
+      lineinfile:
+        dest: /etc/sysconfig/network-scripts/ifcfg-eth1
+        line: GATEWAY=192.168.2.1
+    - name: Restart network
+      systemd:
+        name: network
+        state: restarted   
+
+- hosts: office2Server
+  tasks:
+    - name: add default gateway for office1Router
+      lineinfile:
+        dest: /etc/sysconfig/network-scripts/ifcfg-eth1
+        line: GATEWAY=192.168.1.1
+    - name: Restart network
+      systemd:
+        name: network
+        state: restarted   

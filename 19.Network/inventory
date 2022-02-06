@@ -1,0 +1,10 @@
+[routers]
+inetRouter
+centralRouter
+office1Router
+office2Router
+
+[servers]
+centralServer
+office1Server
+office2Server
