@@ -1,0 +1,7 @@
+[routers]
+inetRouter
+inetRouter2
+centralRouter
+
+[servers]
+centralServer

@@ -1,0 +1,96 @@
+# -*- mode: ruby -*-
+# vim: set ft=ruby :
+
+$hostsfile_update = <<-'SCRIPT'
+echo -e '192.168.50.10 inetRouter\n
+192.168.50.13 inetRouter2\n
+192.168.50.11 centralRouter\n
+192.168.50.12 centralServer >> /etc/hosts
+sed -i 's/PasswordAuthentication no/PasswordAuthentication yes/g' /etc/ssh/sshd_config && systemctl restart sshd
+SCRIPT
+
+$ansible = <<-'SCRIPT'
+yum install -y epel-release
+yum install -y ansible
+SCRIPT
+
+$sshd_config = <<-'SCRIPT'
+echo vagrant | su - vagrant <<- EOF
+ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -P ""
+sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no inetRouter
+sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no inetRouter2
+sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no centralRouter
+sshpass -p vagrant ssh-copy-id -o StrictHostKeyChecking=no centralServer
+EOF
+SCRIPT
+
+MACHINES = {
+  :inetRouter => {
+        :box_name => "centos/stream8",
+        :net => [
+                   {ip: '192.168.255.1', adapter: 2, netmask: "255.255.255.252", virtualbox__intnet: "router-net"},
+                   {ip: '192.168.50.10', adapter: 5},
+                ]
+  },  
+  :inetRouter2 => {
+        :box_name => "centos/stream8",
+        :net => [
+                   {ip: '192.168.255.2', adapter: 2, netmask: "255.255.255.252", virtualbox__intnet: "router2-net"},
+                   {ip: '192.168.50.13', adapter: 5},
+                ]
+  },   
+  :centralServer => {
+        :box_name => "centos/stream8",
+        :net => [
+                   {ip: '192.168.255.3', adapter: 2, netmask: "255.255.255.252", virtualbox__intnet: "server-net"},
+                   {ip: '192.168.50.12', adapter: 5},
+                ]
+  },  
+  :centralRouter => {
+        :box_name => "centos/stream8",
+        :net => [
+                   {ip: '192.168.255.4', adapter: 2, netmask: "255.255.255.252", virtualbox__intnet: "router-net"},
+                   {ip: '192.168.255.5', adapter: 3, netmask: "255.255.255.252", virtualbox__intnet: "router2-net"},
+                   {ip: '192.168.255.6', adapter: 4, netmask: "255.255.255.252", virtualbox__intnet: "server-net"},
+                   {ip: '192.168.50.11', adapter: 5},
+                ]
+  }  
+}
+
+Vagrant.configure("2") do |config|
+
+  MACHINES.each do |boxname, boxconfig|
+
+    config.vm.define boxname do |box|
+
+        box.vm.box = boxconfig[:box_name]
+        box.vm.host_name = boxname.to_s
+
+        boxconfig[:net].each do |ipconf|
+          box.vm.network "private_network", ipconf
+        end
+        
+        if boxconfig.key?(:public)
+          box.vm.network "public_network", boxconfig[:public]
+        end
+
+        box.vm.provision "shell", inline: <<-SHELL
+          mkdir -p ~root/.ssh
+                cp ~vagrant/.ssh/auth* ~root/.ssh
+        SHELL
+
+        box.vm.provision "shell", run: "always", inline: $hostsfile_update
+        
+        case boxname.to_s
+        when "centralRouter"          
+          box.vm.provision "shell", run: "always", inline: $ansible
+          box.vm.provision "shell", run: "always", inline: $hostsfile_update
+          box.vm.provision "shell", run: "always", inline: $sshd_config
+        end
+
+      end
+
+  end  
+  
+end
+

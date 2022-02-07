@@ -1,5 +1,7 @@
 # Сценарии iptables
-Описание/Пошаговая инструкция выполнения домашнего задания:
+
+* [Vagrantfile](https://github.com/maxonchikbk/otus/blob/main/20.iptables/Vagrantfile)
+* [Ansible](https://github.com/maxonchikbk/otus/blob/main/20.iptables/playbook.yml)
 
 1. реализовать knocking port: 
 centralRouter может попасть на ssh inetrRouter через knock скрипт пример в материалах.
@@ -9,5 +11,3 @@ centralRouter может попасть на ssh inetrRouter через knock с
 4. пробросить 80й порт на inetRouter2 8080.
 5. дефолт в инет оставить через inetRouter.
 * реализовать проход на 80й порт без маскарадинга
-
-Формат сдачи ДЗ - vagrant + ansible

@@ -1,0 +1,55 @@
+- name: IPtables Configuration
+  command: iptables -t nat -A POSTROUTING ! -d 192.168.255.0/30 -o eth0 -j MASQUERADE
+
+- name: add route
+  lineinfile:
+    dest: /etc/sysconfig/network-scripts/route-eth1
+    line: 192.168.255.0/30 via 192.168.255.2 dev eth1
+    create: yes
+
+- name: 'Configure sshd'
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PasswordAuthentication'
+    line: 'PasswordAuthentication yes'
+  notify: restart sshd    
+
+- name: 'Enable firewalld'
+  systemd:
+    name: firewalld
+    state: started
+    enabled: yes
+
+- name: 'Disable ssh for central-router'
+  firewalld:
+    rich_rule: 'rule family="ipv4" source address="192.168.255.2" service name="ssh" reject'
+    permanent: yes
+    immediate: yes
+    state: enabled
+
+- name: 'Enable masquerading'
+  firewalld:
+    masquerade: true
+    state: enabled
+    permanent: yes
+    immediate: yes
+
+- name: Install knock server
+  yum:
+    name: 
+    - epel-release
+    - knock
+    state: present
+
+- name: 'Start and enable knock server'
+  systemd:
+    name: knockd
+    state: started
+    enabled: yes
+
+- name: 'Configure knock server'
+  copy: src={{ item.src }} dest={{ item.dest }}
+  with_items:
+    - { src: knockd.conf, dest: /etc/ }
+    - { src: knockd, dest: /etc/sysconfig/ }
+  notify: restart knockd

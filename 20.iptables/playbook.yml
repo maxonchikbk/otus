@@ -1,0 +1,38 @@
+- hosts: all
+  tasks:
+    - name: deisable default route
+      lineinfile:
+        dest: /etc/sysconfig/network-scripts/ifcfg-eth0
+        line: DEFROUTE=no
+
+- hosts: routers
+  tasks:
+    - name: set up forward packages across routers
+      sysctl:
+        name: net.ipv4.conf.all.forwarding
+        value: '1'
+        state: present
+        
+- hosts: centralServer
+  tasks:
+    - import_tasks: centralServer.yml
+  handlers:
+    - import_tasks: handler.yml
+
+- hosts: centralRouter
+  tasks:
+    - import_tasks: centralRouter.yml
+  handlers:
+    - import_tasks: handler.yml
+
+- hosts: inetRouter
+  tasks:
+    - import_tasks: inetRouter.yml
+  handlers:
+    - import_tasks: handler.yml
+
+- hosts: inetRouter2
+  tasks:
+    - import_tasks: inetRouter2.yml
+  handlers:
+    - import_tasks: handler.yml

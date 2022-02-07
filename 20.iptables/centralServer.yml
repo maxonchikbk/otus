@@ -1,0 +1,21 @@
+- name: add default gateway for centralServer
+  lineinfile:
+    dest: /etc/sysconfig/network-scripts/ifcfg-eth1
+    line: GATEWAY=192.168.255.1
+  notify: restart network
+- name: 'Install epel'
+  yum:
+    name:
+      - epel-release
+    state: present
+
+- name: Install nginx
+  yum:
+    name: nginx
+    state: present
+
+- name: Enable nginx
+  systemd:
+    name: nginx
+    state: started
+    enabled: yes
