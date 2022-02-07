@@ -39,7 +39,7 @@
       command: iptables -t nat -A POSTROUTING ! -d 192.168.0.0/16 -o eth0 -j MASQUERADE
     - name: Restart network
       systemd:
-        name: network
+        name: NetworkManager
         state: restarted
 
 - hosts: centralRouter
@@ -58,7 +58,7 @@
         line: 192.168.2.0/24 via 192.168.255.10 dev eth6
     - name: Restart network
       systemd:
-        name: network
+        name: NetworkManager
         state: restarted        
     
 - hosts: centralServer
@@ -69,7 +69,7 @@
         line: GATEWAY=192.168.0.1
     - name: Restart network
       systemd:
-        name: network
+        name: NetworkManager
         state: restarted            
 
 - hosts: office1Router 
@@ -80,7 +80,7 @@
         line: GATEWAY=192.168.255.5
     - name: Restart network
       systemd:
-        name: network
+        name: NetworkManager
         state: restarted                    
 
 - hosts: office2Router 
@@ -91,7 +91,7 @@
         line: GATEWAY=192.168.255.9
     - name: Restart network
       systemd:
-        name: network
+        name: NetworkManager
         state: restarted        
 
 - hosts: office1Server
@@ -102,7 +102,7 @@
         line: GATEWAY=192.168.2.1
     - name: Restart network
       systemd:
-        name: network
+        name: NetworkManager
         state: restarted   
 
 - hosts: office2Server
@@ -113,5 +113,5 @@
         line: GATEWAY=192.168.1.1
     - name: Restart network
       systemd:
-        name: network
+        name: NetworkManager
         state: restarted   
