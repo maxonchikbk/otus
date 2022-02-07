@@ -19,6 +19,7 @@
       lineinfile:
         dest: /etc/sysconfig/network-scripts/route-eth1
         line: 192.168.0.0/24 via 192.168.255.2 dev eth1
+        create: yes
     - name: add route for office2
       lineinfile:
         dest: /etc/sysconfig/network-scripts/route-eth1
@@ -52,10 +53,12 @@
       lineinfile:
         dest: /etc/sysconfig/network-scripts/route-eth5
         line: 192.168.2.0/24 via 192.168.255.6 dev eth5
+        create: yes
     - name: route add for office1
       lineinfile:
         dest: /etc/sysconfig/network-scripts/route-eth6
         line: 192.168.2.0/24 via 192.168.255.10 dev eth6
+        create: yes
     - name: Restart network
       systemd:
         name: NetworkManager
