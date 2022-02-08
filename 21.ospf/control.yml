@@ -1,0 +1,15 @@
+- name: configure control vlan0 interface
+  copy:
+    src: conf/control-vlan0.conf
+    dest: /etc/sysconfig/network-scripts/ifcfg-eth1.0
+  notify: network restart
+- name: configure control vlan10 interface
+  copy:
+    src: conf/control-vlan10.conf
+    dest: /etc/sysconfig/network-scripts/ifcfg-eth1.10
+  notify: network restart
+- name: configure control ospfd
+  copy:
+    src: conf/control-ospfd.conf
+    dest: /etc/frr/ospfd.conf
+  notify: frr restart

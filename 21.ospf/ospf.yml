@@ -1,0 +1,54 @@
+- hosts: all
+  tasks:
+  - name: install
+    yum:
+      name:
+      - epel-release
+      - frr
+      state: present
+
+  - name: Configure frr
+    copy:
+      src: conf/daemons
+      dest: /etc/frr/
+    notify: restart frr
+
+  - name: net.ipv4.ip_forward ON
+    sysctl:
+      name: net.ipv4.ip_forward
+      value: '1'
+      sysctl_set: yes
+      state: present
+      reload: yes
+
+  - name: net.ipv4.conf.all.rp_filter ON
+    sysctl:
+      name: net.ipv4.conf.all.rp_filter
+      value: '0'
+      sysctl_set: yes
+      state: present
+      reload: yes    
+
+  handlers:
+  - name: restart frr
+    service:
+      name: frr
+      state: restarted
+
+- hosts: control
+  tasks:
+  - import_tasks: control.yml
+  handlers:
+  - import_tasks: handler.yml
+
+- hosts: node1
+  tasks:
+  - import_tasks: node1.yml
+  handlers:
+  - import_tasks: handler.yml  
+  
+- hosts: node2
+  tasks:
+  - import_tasks: node2.yml
+  handlers:
+  - import_tasks: handler.yml 

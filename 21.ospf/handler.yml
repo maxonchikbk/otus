@@ -1,0 +1,8 @@
+  - name: network restart
+    service:
+      name: NetworkManager
+      state: restarted   
+  - name: frr restart
+    service:
+      name: frr
+      state: restarted

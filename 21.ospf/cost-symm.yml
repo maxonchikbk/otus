@@ -1,0 +1,23 @@
+- hosts: control
+  tasks:
+  - name: Copy settings
+    copy: 
+      src: 'conf/control-ospfdcost.conf'
+      dest: '/etc/frr/ospfd.conf'
+    
+  - name: restart frr
+    service:
+      name: frr
+      state: restarted
+
+- hosts: node2
+  tasks:
+  - name: Copy settings
+    copy: 
+      src: 'conf/control-ospfdcost.conf'
+      dest: '/etc/frr/ospfd.conf'
+    
+  - name: restart frr
+    service:
+      name: frr
+      state: restarted

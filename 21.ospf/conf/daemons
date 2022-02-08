@@ -1,0 +1,36 @@
+watchfrr_enable=yes
+watchfrr_options="-r '/usr/lib/frr/frr restart %s' -s '/usr/lib/frr/frr start %s' -k '/usr/lib/frr/frr stop %s'"
+
+zebra=yes
+bgpd=no
+ospfd=yes
+ospf6d=no
+ripd=no
+ripngd=no
+isisd=no
+pimd=no
+nhrpd=no
+eigrpd=no
+sharpd=no
+pbrd=no
+staticd=no
+bfdd=no
+fabricd=no
+
+zebra_options=("-A 127.0.0.1")
+bgpd_options=("-A 127.0.0.1")
+ospfd_options=("-A 127.0.0.1")
+ospf6d_options=("-A ::1")
+ripd_options=("-A 127.0.0.1")
+ripngd_options=("-A ::1")
+isisd_options=("-A 127.0.0.1")
+pimd_options=("-A 127.0.0.1")
+nhrpd_options=("-A 127.0.0.1")
+eigrpd_options=("-A 127.0.0.1")
+sharpd_options=("-A 127.0.0.1")
+pbrd_options=("-A 127.0.0.1")
+staticd_options=("-A 127.0.0.1")
+bfdd_options=("-A 127.0.0.1")
+fabricd_options=("-A 127.0.0.1")
+
+vtysh_enable=yes

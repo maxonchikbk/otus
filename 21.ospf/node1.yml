@@ -1,0 +1,15 @@
+- name: configure node1 vlan0 interface
+  copy:
+    src: conf/node1-vlan0.conf
+    dest: /etc/sysconfig/network-scripts/ifcfg-eth1.0
+  notify: network restart
+- name: configure node1 vlan20 interface
+  copy:
+    src: conf/node1-vlan20.conf
+    dest: /etc/sysconfig/network-scripts/ifcfg-eth1.20
+  notify: network restart
+- name: configure node1 ospfd
+  copy:
+    src: conf/node1-ospfd.conf
+    dest: /etc/frr/ospfd.conf
+  notify: frr restart
