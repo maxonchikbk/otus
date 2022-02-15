@@ -14,6 +14,7 @@
       owner: root
       group: named 
       mode: 0644
+      force: yes
   - name: setup selinux
     shell: semanage fcontext -a -e /var/named /etc/named && restorecon -R -v /etc/named && setsebool -P named_write_master_zones 1
 
@@ -21,11 +22,12 @@
   tasks:  
   - name: copy resolv.conf
     copy: 
-      src: servers-resolv.conf 
+      src: provisioning/servers-resolv.conf 
       dest: /etc/resolv.conf 
       owner: root 
       group: root
-      mode: 0644      
+      mode: 0644
+      force: yes      
   - name: set permissions
     file: 
       path: /etc/named
@@ -42,25 +44,28 @@
   tasks:  
   - name: copy resolv.conf
     copy: 
-      src: clients-resolv.conf 
+      src: provisioning/clients-resolv.conf 
       dest: /etc/resolv.conf 
       owner: root 
       group: root
       mode: 0644
+      force: yes
   - name: copy rndc
     copy:
-      src: rndc.conf
+      src: provisioning/rndc.conf
       dest: /home/vagrant/rndc.conf
       owner: vagrant
       group: vagrant
       mode: 0644
+      force: yes
   - name: copy motd
     copy: 
-      src: client-motd
+      src: provisioning/client-motd
       dest: /etc/motd
       owner: root
       group: root
-      mode: 0644      
+      mode: 0644
+      force: yes      
 
 - hosts: ns01
   tasks:
@@ -71,18 +76,21 @@
       owner: root
       group: named 
       mode: 0640
+      force: yes      
+
   - name: copy zones
-    copy: src={{ item }} dest=/etc/named/ owner=root group=named mode=0660
+    copy: src={{ item }} dest=/etc/named/ owner=root group=named mode=0660 force=yes
     with_fileglob:
-      - named.d*
-      - named.n*
+      - provisioning/named.d*
+      - provisioning/named.n*
 
 - hosts: ns02  
   tasks:
   - name: copy named.conf
     copy: 
-      src: slave-named.conf
+      src: provisioning/slave-named.conf
       dest: /etc/named.conf 
       owner: root
       group: named
       mode: 0640
+      force: yes            
